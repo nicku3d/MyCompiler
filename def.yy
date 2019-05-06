@@ -8,13 +8,9 @@
 #include <map>
 #define INFILE_ERROR 1
 #define OUTFILE_ERROR 2
-#define INT1 1
-#define DOUBLE1 2
-#define STRING1 3
-#define AINT 4
-#define ADOUBLE 5
 using namespace std;
-map<string, int> mapa_symboli;
+enum Type{Int, Double, String, IntArray, DoubleArray};
+map<string, int> symbols_map;
 map<string, string> string_map;
 void RPNtoFile(string);
 void czynnikToStack(string, int);
@@ -25,11 +21,12 @@ void printi();
 void printd();
 void prints(string);
 void scani(string);
-void scand();
+void scand(string);
 string commentToASM(string comm);
 string argToASM(string arg, int type, int tx);
 string wyrToASM(string wyr);
 string resultToASM(string result);
+int floatCounter=0;
 extern "C" int yylex();
 extern "C" int yyerror(const char *msg, ...);
 %}
@@ -66,7 +63,7 @@ io_statment
 							prints($3);}
 	|PRINTLN '('')'		{;}
 	|SCANI '(' ID ')'	{cout<<"SCANI"<<endl;
-						mapa_symboli[string($3)]=INT1;
+						symbols_map[string($3)]=Int;
 						scani($3);}
 	|SCAND '(' ID ')'	{;}
 	;
@@ -100,7 +97,7 @@ wyrp
 	:ID '=' wyr		{printf("wyrazenie z = \n");
 				RPNtoFile($1);
 				RPNtoFile("=");
-				mapa_symboli[string($1)]=INT1;
+				symbols_map[string($1)]=Int;
 				czynnikToStack(string($1), ID);
 				wyrToStack("=");};
 	;
@@ -123,7 +120,7 @@ skladnik
 
 czynnik
 	:ID			{RPNtoFile(string($1));
-				mapa_symboli[string($1)]=INT1;
+				symbols_map[string($1)]=Int;
 				cout<<"ID NA STOS"<<endl;
 				czynnikToStack(string($1), ID);
 				}
@@ -151,7 +148,6 @@ ofstream testfile;
 ofstream fileRPN;
 int counter=0;
 int stringCounter=0;
-enum Type{Int, Double, String};
 
 int main(int argc, char *argv[])
 {
@@ -164,7 +160,7 @@ int main(int argc, char *argv[])
 
 	//zapisywanie mapy symboli do pliku
 	testfile.open("symbols.txt");
-	for(const auto& it: mapa_symboli)
+	for(const auto& it: symbols_map)
 	{
 		testfile << it.first;
 		testfile << " => ";
@@ -217,7 +213,7 @@ void wyrToStack(string wyr)
 		//dodawanie resulta
 		counter++;
 		tmp+=to_string(counter);
-		mapa_symboli[tmp]=INT1;
+		symbols_map[tmp]=Int;
 		el.val=tmp;
 		el.type=ID;
 		stk.push(el);
@@ -292,11 +288,11 @@ void toASM()
 {
 	testfile.open("ASM.txt");
 	testfile <<".data\n";
-	for(const auto& it: mapa_symboli)
+	for(const auto& it: symbols_map)
 	{
 		testfile << it.first;
 		testfile << ":		";
-		if(it.second==STRING1){
+		if(it.second==String){
 		testfile <<".asciiz ";
 		testfile <<string_map[it.first];
 		}
@@ -332,8 +328,6 @@ void printi()
 	asmBuffer.push_back(toPrint);
 	asmBuffer.push_back("syscall");
 	stk.pop();
-	
-
 }
 
 void printd()
@@ -342,7 +336,7 @@ void printd()
 void prints(string strToPrint)
 {
 	string strName="str"+to_string(stringCounter);
-	mapa_symboli[strName]=STRING1;
+	symbols_map[strName]=String;
 	string_map[strName]=strToPrint;
 	stringCounter++;
 	asmBuffer.push_back(commentToASM("prints "+strName));
@@ -360,8 +354,6 @@ void scani(string var)
 	//syscall
 	//sw $v0 , x
 	string tmpstr="sw $v0, " + var;
-	//tmpstr += stk.top().val;
-	//cout<<"stack size: "<< stk.size()<<endl;
 	asmBuffer.push_back(commentToASM("scani()"));
 	asmBuffer.push_back("li $v0, 5");
 	asmBuffer.push_back("syscall");
@@ -371,7 +363,7 @@ void scani(string var)
 
 }
 
-void scand()
+void scand(string var)
 {
 }
 /*załadowanie 1 arg
