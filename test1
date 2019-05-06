@@ -1,0 +1,5 @@
+a=5*4+(3*5);
+printi(a);
+prints("helloworld");
+scani(b);
+printi(b);
