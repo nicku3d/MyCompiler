@@ -17,7 +17,6 @@ struct element
 };
 map<string, element> symbols_map; //rozwinąc tablice symboli o wartosc 
 //i wtedy usunac tablice stringow bo nie bedzie juz potrzebna
-map<string, string> string_map;
 void RPNtoFile(string);
 void czynnikToStack(string, int);
 void wyrToStack(string);
@@ -300,7 +299,7 @@ void toASM()
 		testfile << ":		";
 		if(it.second.type==String){
 		testfile <<".asciiz ";
-		testfile <<string_map[it.first];
+		testfile <<it.second.val;
 		}
 		else if(it.second.type==Double){
 			testfile << ".float ";
@@ -347,7 +346,7 @@ void prints(string strToPrint)
 {
 	string strName="str"+to_string(stringCounter);
 	symbols_map[strName].type=String;
-	string_map[strName]=strToPrint;
+	symbols_map[strName].val=strToPrint;
 	stringCounter++;
 	asmBuffer.push_back(commentToASM("prints "+strName));
 	asmBuffer.push_back("li $v0, 4");
