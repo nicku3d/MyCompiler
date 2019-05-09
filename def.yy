@@ -10,7 +10,13 @@
 #define OUTFILE_ERROR 2
 using namespace std;
 enum Type{Int, Double, String, IntArray, DoubleArray};
-map<string, int> symbols_map;
+struct element
+{
+	int type;
+	string val;
+};
+map<string, element> symbols_map; //rozwinąc tablice symboli o wartosc 
+//i wtedy usunac tablice stringow bo nie bedzie juz potrzebna
 map<string, string> string_map;
 void RPNtoFile(string);
 void czynnikToStack(string, int);
@@ -63,7 +69,7 @@ io_statment
 							prints($3);}
 	|PRINTLN '('')'		{;}
 	|SCANI '(' ID ')'	{cout<<"SCANI"<<endl;
-						symbols_map[string($3)]=Int;
+						symbols_map[string($3)].type=Int;
 						scani($3);}
 	|SCAND '(' ID ')'	{;}
 	;
@@ -97,7 +103,7 @@ wyrp
 	:ID '=' wyr		{printf("wyrazenie z = \n");
 				RPNtoFile($1);
 				RPNtoFile("=");
-				symbols_map[string($1)]=Int;
+				symbols_map[string($1)].type=Int;
 				czynnikToStack(string($1), ID);
 				wyrToStack("=");};
 	;
@@ -120,7 +126,7 @@ skladnik
 
 czynnik
 	:ID			{RPNtoFile(string($1));
-				symbols_map[string($1)]=Int;
+				symbols_map[string($1)].type=Int;
 				cout<<"ID NA STOS"<<endl;
 				czynnikToStack(string($1), ID);
 				}
@@ -129,6 +135,7 @@ czynnik
 				czynnikToStack(s, LC);
 				}
 	|LR			{string s = to_string($1);
+				//dodanie floata do tablicy syboli
 				RPNtoFile(s);
 				czynnikToStack(s, LR);
 				}
@@ -136,11 +143,6 @@ czynnik
 	;
 
 %%
-struct element
-{
-	int type;
-	string val;
-};
 // kluczem jest identyfikator a wartosc to typ czyli int type;
 stack<element> stk;
 vector<string> asmBuffer;
@@ -164,7 +166,7 @@ int main(int argc, char *argv[])
 	{
 		testfile << it.first;
 		testfile << " => ";
-		testfile << it.second;
+		testfile << it.second.type;
 		testfile << "\n";
 	}
 	testfile.close();
@@ -213,7 +215,7 @@ void wyrToStack(string wyr)
 		//dodawanie resulta
 		counter++;
 		tmp+=to_string(counter);
-		symbols_map[tmp]=Int;
+		symbols_map[tmp].type=Int;
 		el.val=tmp;
 		el.type=ID;
 		stk.push(el);
@@ -292,7 +294,7 @@ void toASM()
 	{
 		testfile << it.first;
 		testfile << ":		";
-		if(it.second==String){
+		if(it.second.type==String){
 		testfile <<".asciiz ";
 		testfile <<string_map[it.first];
 		}
@@ -336,7 +338,7 @@ void printd()
 void prints(string strToPrint)
 {
 	string strName="str"+to_string(stringCounter);
-	symbols_map[strName]=String;
+	symbols_map[strName].type=String;
 	string_map[strName]=strToPrint;
 	stringCounter++;
 	asmBuffer.push_back(commentToASM("prints "+strName));
