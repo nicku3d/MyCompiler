@@ -135,7 +135,11 @@ czynnik
 				czynnikToStack(s, LC);
 				}
 	|LR			{string s = to_string($1);
-				//dodanie floata do tablicy syboli
+				//dodanie floata do tablicy symboli
+				string floatName="float_value"+to_string(floatCounter);
+				floatCounter++;
+				symbols_map[floatName].type=Double;
+				symbols_map[floatName].val=s;
 				RPNtoFile(s);
 				czynnikToStack(s, LR);
 				}
@@ -297,6 +301,10 @@ void toASM()
 		if(it.second.type==String){
 		testfile <<".asciiz ";
 		testfile <<string_map[it.first];
+		}
+		else if(it.second.type==Double){
+			testfile << ".float ";
+			testfile << it.second.val;
 		}
 		else {
 		testfile << ".word ";
