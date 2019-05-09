@@ -3,3 +3,4 @@ printi(a);
 prints("helloworld");
 scani(b);
 printi(b);
+printi(5+7);
