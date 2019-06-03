@@ -30,8 +30,8 @@ void scani(string);
 void scand(string);
 int getType(string);
 string commentToASM(string comm);
-string argToASM(string arg, int type, int tx);
-string wyrToASM(string wyr);
+string argToASM(string arg, int type, int tx, bool convertion);
+string wyrToASM(string wyr, int type);
 string resultToASM(string result, int type);
 string getFloatName(string arg);
 int floatCounter=0;
@@ -220,7 +220,7 @@ void wyrToStack(string wyr)
 		//lw $t0, resultx
 		//sw $t0, zmienna
 		asmBuffer.push_back(commentToASM(result));
-		asmBuffer.push_back(argToASM(arg1, arg1type, 0));
+		asmBuffer.push_back(argToASM(arg1, arg1type, 0, false));
 		asmBuffer.push_back(resultToASM(arg2, arg1type));
 
 	}
@@ -244,9 +244,20 @@ void wyrToStack(string wyr)
 		stk.push(el);
 		
 		asmBuffer.push_back(commentToASM(result));
-		asmBuffer.push_back(argToASM(arg1, arg1type, 0));
-		asmBuffer.push_back(argToASM(arg2, arg2type, 1));
-		asmBuffer.push_back(wyrToASM(wyr));
+		if(arg1type == LC && tmpType == LR)
+		{
+			asmBuffer.push_back(argToASM(arg1, arg1type, 0, true));
+		}
+		else asmBuffer.push_back(argToASM(arg1, arg1type, 0, false));
+
+		if(arg2type == LC && tmpType == LR)
+		{
+			asmBuffer.push_back(argToASM(arg2, arg2type, 1, true));
+		}
+		else asmBuffer.push_back(argToASM(arg2, arg2type, 1, false));
+
+		//asmBuffer.push_back(argToASM(arg2, arg2type, 1));
+		asmBuffer.push_back(wyrToASM(wyr, tmpType));
 		asmBuffer.push_back(resultToASM(tmp, tmpType));
 	}
 }
@@ -277,10 +288,20 @@ string commentToASM(string comm)
 	return "\n# "+comm;
 }
 
-string argToASM(string arg, int type, int tx)
+string argToASM(string arg, int type, int tx, bool conversion)
 {
 	string tmp;
-	if(type==ID){
+	if(conversion)//konwersja zawsze z inta na double
+	{
+		tmp="li";
+		tmp+=" $t"+to_string(tx)+", "+arg;
+		tmp+="\n";
+		tmp+="mtc1 $t"+to_string(tx)+", $f4";
+		//cvt . s . w $f1 , $f0
+		tmp+="\n";
+		tmp+="cvt.s.w $f4, $f"+to_string(tx);
+	}
+	else if(type==ID){
 	//TODO:sprawdzenie czy ID jest Int czy DOUBLE
 		if(getType(arg) == Int)
 		{
@@ -297,7 +318,7 @@ string argToASM(string arg, int type, int tx)
 		tmp+=" $t"+to_string(tx)+", "+arg;
 	}
 	else if(type == LR){
-		tmp='l.s';
+		tmp="l.s";
 		string argName = getFloatName(arg);
 		tmp+=" $f"+to_string(tx)+", "+argName;
 	} 
@@ -318,11 +339,13 @@ string getFloatName(string arg){
 	}
 }
 
-string wyrToASM(string wyr)
+string wyrToASM(string wyr, int type)
 {
 	//add, mul, sub, div
 	
 	string tmp;
+	if(type == LC)
+	{
 		if(wyr=="+")
 			tmp="add";
 		else if(wyr=="-")
@@ -332,6 +355,18 @@ string wyrToASM(string wyr)
 		else if(wyr=="/")
 			tmp="div";
 		return tmp+" $t0, $t0, $t1";
+	}
+	else{
+		if(wyr=="+")
+			tmp="add.s";
+		else if(wyr=="-")
+			tmp="sub.s";
+		else if(wyr=="*")
+			tmp="mul.s";
+		else if(wyr=="/")
+			tmp="div.s";
+		return tmp+" $f0, $f0, $f1";
+	}
 
 		//TODO: Dodac operacje na floatach 
 		/*
