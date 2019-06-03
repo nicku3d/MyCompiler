@@ -1,2 +1,4 @@
 # MyCompiler
-TODO: Make float artmetic calculations available
+TODO:
+Make Float console input & output
+Make if
