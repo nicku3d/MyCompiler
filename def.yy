@@ -16,7 +16,8 @@ struct element
 	string val;
 };
 map<string, element> symbols_map; //rozwinąc tablice symboli o wartosc 
-//i wtedy usunac tablice stringow bo nie bedzie juz potrzebna
+//i wtedy usunac tablice stringow bo nie bedzie juz potrzebna ->> zrobione
+
 void RPNtoFile(string);
 void czynnikToStack(string, int);
 void wyrToStack(string);
@@ -27,10 +28,12 @@ void printd();
 void prints(string);
 void scani(string);
 void scand(string);
+int getType(string);
 string commentToASM(string comm);
 string argToASM(string arg, int type, int tx);
 string wyrToASM(string wyr);
 string resultToASM(string result);
+string getFloatName(string arg);
 int floatCounter=0;
 extern "C" int yylex();
 extern "C" int yyerror(const char *msg, ...);
@@ -190,6 +193,7 @@ void wyrToStack(string wyr)
 	string result, arg1, arg2, tmp="result";
 	int arg1type, arg2type;
 	element el;
+
 	arg2=stk.top().val;
 	arg2type=stk.top().type;
 	stk.pop();
@@ -199,7 +203,6 @@ void wyrToStack(string wyr)
 	result+=arg1;
 	result+=wyr;
 	result+=arg2;
-
 	
 	triplesToFile(result);
 
@@ -260,12 +263,30 @@ string commentToASM(string comm)
 string argToASM(string arg, int type, int tx)
 {
 	string tmp;
-	if(type==ID)
+	if(type==ID){
+	//TODO:sprawdzenie czy ID jest Int czy DOUBLE
 		tmp="lw";
-	else
+		tmp+=" $t"+to_string(tx)+", "+arg;
+	}
+	else if(type == LC){ 
 		tmp="li";
-	tmp+=" $t"+to_string(tx)+", "+arg;
+		tmp+=" $t"+to_string(tx)+", "+arg;
+	}
+	else if(type == LR){
+		tmp='l.s';
+		string argName = getFloatName(arg);
+		tmp+=" $f"+to_string(tx)+", "+argName;
+	} 
+	
 	return tmp;
+}
+
+string getFloatName(string arg){
+	for(const auto& it: symbols_map)
+	{
+		if (it.second.val == arg)
+        return it.first;
+	}
 }
 
 string wyrToASM(string wyr)
@@ -374,6 +395,12 @@ void scani(string var)
 
 void scand(string var)
 {
+}
+
+
+int getType(string variableName)
+{
+	return symbols_map[variableName].type;
 }
 /*załadowanie 1 arg
 ewentualna konwersja
