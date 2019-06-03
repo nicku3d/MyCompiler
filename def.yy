@@ -32,7 +32,7 @@ int getType(string);
 string commentToASM(string comm);
 string argToASM(string arg, int type, int tx);
 string wyrToASM(string wyr);
-string resultToASM(string result);
+string resultToASM(string result, int type);
 string getFloatName(string arg);
 int floatCounter=0;
 extern "C" int yylex();
@@ -191,6 +191,7 @@ void czynnikToStack(string czynnik, int type)
 void wyrToStack(string wyr)
 {
 	string result, arg1, arg2, tmp="result";
+	int tmpType=0;
 	int arg1type, arg2type;
 	element el;
 
@@ -209,12 +210,19 @@ void wyrToStack(string wyr)
 	//generowanie asemblera do trojek
 	if(wyr=="=")
 	{
+		//zmiana typu zmiennej do ktorej przypisywana jest wartość na odpowiedni do przypisywanej wartosci D:
+		if(symbols_map[arg1].type == Double) {
+			symbols_map[arg2].type = Double;
+			symbols_map[arg2].val = "0";
+			cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+		}
 		//comment
 		//lw $t0, resultx
 		//sw $t0, zmienna
 		asmBuffer.push_back(commentToASM(result));
 		asmBuffer.push_back(argToASM(arg1, arg1type, 0));
-		asmBuffer.push_back(resultToASM(arg2));
+		asmBuffer.push_back(resultToASM(arg2, arg1type));
+
 	}
 	else
 	{
@@ -225,8 +233,12 @@ void wyrToStack(string wyr)
 		if(arg1type == LR || arg2type == LR) {
 			symbols_map[tmp].type=Double;
 			symbols_map[tmp].val="0";
+			tmpType=LR;
 		}
-		else symbols_map[tmp].type=Int;
+		else {
+			symbols_map[tmp].type=Int;
+			tmpType=LC;
+		}
 		el.val=tmp;
 		el.type=ID;
 		stk.push(el);
@@ -235,7 +247,7 @@ void wyrToStack(string wyr)
 		asmBuffer.push_back(argToASM(arg1, arg1type, 0));
 		asmBuffer.push_back(argToASM(arg2, arg2type, 1));
 		asmBuffer.push_back(wyrToASM(wyr));
-		asmBuffer.push_back(resultToASM(tmp));
+		asmBuffer.push_back(resultToASM(tmp, tmpType));
 	}
 }
 
@@ -270,8 +282,15 @@ string argToASM(string arg, int type, int tx)
 	string tmp;
 	if(type==ID){
 	//TODO:sprawdzenie czy ID jest Int czy DOUBLE
-		tmp="lw";
-		tmp+=" $t"+to_string(tx)+", "+arg;
+		if(getType(arg) == Int)
+		{
+			tmp="lw";
+			tmp+=" $t"+to_string(tx)+", "+arg;
+		}
+		else {
+			tmp="l.s";
+			tmp+=" $f"+to_string(tx)+", "+arg;
+		}
 	}
 	else if(type == LC){ 
 		tmp="li";
@@ -284,6 +303,11 @@ string argToASM(string arg, int type, int tx)
 	} 
 	
 	return tmp;
+}
+
+int getType(string variableName)
+{
+	return symbols_map[variableName].type;
 }
 
 string getFloatName(string arg){
@@ -315,9 +339,10 @@ string wyrToASM(string wyr)
 		*/
 }
 
-string resultToASM(string result)
+string resultToASM(string result, int type)
 {
-	return "sw $t0, "+result;
+	if(type==LC) return "sw $t0, "+result;
+	else return "s.s $f0, "+result;
 }
 
 void toASM()
@@ -405,12 +430,6 @@ void scani(string var)
 
 void scand(string var)
 {
-}
-
-
-int getType(string variableName)
-{
-	return symbols_map[variableName].type;
 }
 /*załadowanie 1 arg
 ewentualna konwersja
