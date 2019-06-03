@@ -221,7 +221,12 @@ void wyrToStack(string wyr)
 		//dodawanie resulta
 		counter++;
 		tmp+=to_string(counter);
-		symbols_map[tmp].type=Int;
+		//jesli ktorys z argumentow rownania jest Double to typ resulta tez bedzie double
+		if(arg1type == LR || arg2type == LR) {
+			symbols_map[tmp].type=Double;
+			symbols_map[tmp].val="0";
+		}
+		else symbols_map[tmp].type=Int;
 		el.val=tmp;
 		el.type=ID;
 		stk.push(el);
@@ -303,6 +308,11 @@ string wyrToASM(string wyr)
 		else if(wyr=="/")
 			tmp="div";
 		return tmp+" $t0, $t0, $t1";
+
+		//TODO: Dodac operacje na floatach 
+		/*
+
+		*/
 }
 
 string resultToASM(string result)
