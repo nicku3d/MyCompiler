@@ -75,7 +75,9 @@ io_statment
 	|SCANI '(' ID ')'	{cout<<"SCANI"<<endl;
 						symbols_map[string($3)].type=Int;
 						scani($3);}
-	|SCAND '(' ID ')'	{;}
+	|SCAND '(' ID ')'	{cout<<"SCAND"<<endl;
+						symbols_map[string($3)].type=Double;
+						scand($3);}
 	;
 
 if_expr
@@ -508,6 +510,11 @@ void scani(string var)
 
 void scand(string var)
 {
+	string tmpstr = "s.s $f0, "+ var;
+	asmBuffer.push_back(commentToASM("scand()"));
+	asmBuffer.push_back("li $v0, 6");
+	asmBuffer.push_back("syscall");
+	asmBuffer.push_back(tmpstr);
 }
 /*załadowanie 1 arg
 ewentualna konwersja
