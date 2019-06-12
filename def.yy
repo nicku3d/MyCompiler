@@ -67,7 +67,8 @@ linia
 io_statment
 	:PRINTI	'(' wyr ')'	{cout<<"PRINTI"<<endl;
 						printi();}
-	|PRINTD	'(' wyr ')'	{;}
+	|PRINTD	'(' wyr ')'	{cout<<"PRINTD"<<endl;
+						printd();}
 	|PRINTS	'(' STRING ')'	{cout<<"PRINTS"<<endl;
 							prints($3);}
 	|PRINTLN '('')'		{;}
@@ -129,7 +130,8 @@ skladnik
 
 czynnik
 	:ID			{RPNtoFile(string($1));
-				symbols_map[string($1)].type=Int;
+				if(getType(string($1)) == Double) symbols_map[string($1)].type=Double;
+				else symbols_map[string($1)].type=Int;
 				cout<<"ID NA STOS"<<endl;
 				czynnikToStack(string($1), ID);
 				}
@@ -213,8 +215,6 @@ void wyrToStack(string wyr)
 	if(wyr=="=")
 	{
 		//!!!JEDNAK NIE!!! Jednak statyczny typ
-		//zmiana typu zmiennej do ktorej przypisywana jest wartość na odpowiedni do przypisywanej wartosci D:
-		//DZIALA ALE NIE WIEM JAK!!!!!!
 		if(symbols_map[arg2].typeChanged == true) {
 			yyerror("Próba przypisania błędnego typu do zmiennej\n");
 		} else {
@@ -434,9 +434,16 @@ void toASM()
 
 void printi()
 {
+	//BŁĄÐ: po zrobieniu floata i próbie wypisania go staje sie on intem
 	//li $v0 , 1 print
 	//li $a0 , 42 liczba do wypisania
 	//syscall wywołanie
+
+	if(stk.top().type == ID){
+		if(symbols_map[stk.top().val].type == Double)
+			yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej");
+	}
+	else if(stk.top().type == LR) yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej");
 	asmBuffer.push_back(commentToASM("printi "+stk.top().val));
 	asmBuffer.push_back("li $v0, 1");
 	string toPrint;
@@ -451,6 +458,9 @@ void printi()
 
 void printd()
 {
+	//li $v0 , 2
+	//l.s $f12 , wartosc
+	//syscall
 }
 void prints(string strToPrint)
 {
