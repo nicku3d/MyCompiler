@@ -441,9 +441,8 @@ void printi()
 
 	if(stk.top().type == ID){
 		if(symbols_map[stk.top().val].type == Double)
-			yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej");
-	}
-	else if(stk.top().type == LR) yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej");
+			yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej\n");
+	} else if(stk.top().type == LR) yyerror("Błąd, funkcja printi() nie moze wypisac liczby zmiennoprzecinkowej\n");
 	asmBuffer.push_back(commentToASM("printi "+stk.top().val));
 	asmBuffer.push_back("li $v0, 1");
 	string toPrint;
@@ -461,6 +460,21 @@ void printd()
 	//li $v0 , 2
 	//l.s $f12 , wartosc
 	//syscall
+	if(stk.top().type == ID){
+		if(symbols_map[stk.top().val].type == Int)
+			yyerror("Błąd, funkcja printd() nie moze wypisac liczby calkowitej\n");
+	} else if(stk.top().type == LC) yyerror("Błąd, funkcja printd() nie moze wypisac liczby calkowitej\n");
+	asmBuffer.push_back(commentToASM("printi "+stk.top().val));
+	asmBuffer.push_back("li $v0, 2");
+	string toPrint="l.s $f12, ";
+	if(stk.top().type == ID) toPrint+=stk.top().val;
+	else {
+		toPrint += getFloatName(stk.top().val);
+	}
+	asmBuffer.push_back(toPrint);
+	asmBuffer.push_back("syscall");
+	stk.pop();
+
 }
 void prints(string strToPrint)
 {
