@@ -14,6 +14,7 @@ struct element
 {
 	int type;
 	string val;
+	bool typeChanged=false;
 };
 map<string, element> symbols_map; //rozwinąc tablice symboli o wartosc 
 //i wtedy usunac tablice stringow bo nie bedzie juz potrzebna ->> zrobione
@@ -204,17 +205,35 @@ void wyrToStack(string wyr)
 	result+=arg1;
 	result+=wyr;
 	result+=arg2;
+	//arg2 jest po prawej czyli przyjmuje wartosc arg1
 	
 	triplesToFile(result);
 
 	//generowanie asemblera do trojek
 	if(wyr=="=")
 	{
+		//!!!JEDNAK NIE!!! Jednak statyczny typ
 		//zmiana typu zmiennej do ktorej przypisywana jest wartość na odpowiedni do przypisywanej wartosci D:
-		if(symbols_map[arg1].type == Double) {
-			symbols_map[arg2].type = Double;
-			symbols_map[arg2].val = "0";
-			cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+		//DZIALA ALE NIE WIEM JAK!!!!!!
+		if(symbols_map[arg2].typeChanged == true) {
+			yyerror("Próba przypisania błędnego typu do zmiennej\n");
+		} else {
+			if(arg1type == ID)
+			{
+				if(symbols_map[arg1].type == Double) {
+					symbols_map[arg2].type = Double;
+					//cout<<"Zmieniono typ "<< arg2 << " na double, poniewaz "<< arg1 << " jest double"<<endl;
+					symbols_map[arg2].val = "0";
+					cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+				}
+			} else{
+				if(arg1type == LR){
+					symbols_map[arg2].type = Double;
+					symbols_map[arg2].val = "0";
+					cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+				}
+			}
+			symbols_map[arg2].typeChanged = true;
 		}
 		//comment
 		//lw $t0, resultx
