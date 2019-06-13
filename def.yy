@@ -26,6 +26,7 @@ int labelCounter=0;
 void ifBegin();
 void ifEnd();
 void ifCondition(string logicOpt);
+void ifElse();
 
 //while
 void whileBegin();
@@ -62,7 +63,7 @@ double dval;};
 %token INT DOUBLE
 %token PRINTI PRINTD PRINTS PRINTLN
 %token SCANI SCAND
-%token IF WHILE
+%token IF ELSE WHILE
 %%
 wiell
 	:wiell linia		{printf("wiell l\n");}
@@ -106,7 +107,13 @@ while_begin
 if_expr
 	:if_begin code_block 	{cout<<"etykieta koncowa"<<endl;
 							ifEnd();}//generowanie etykiety koncowej
+	|else_begin code_block  {cout<<"else etykieta koncowa"<<endl;
+							ifEnd();}//generowanie etykiety koncowej
 	;
+
+else_begin
+	:if_begin code_block ELSE {ifElse();}
+	; 
 
 if_begin
 	:IF '(' condition ')' 	{cout<<"poczatek"<<endl;
@@ -592,6 +599,15 @@ void ifCondition(string logicOpt){
 	else if (logicOpt == "<=") asmBuffer.push_back("bgt $t0, $t1, label"+to_string(labelCounter));
 	else if (logicOpt == ">") asmBuffer.push_back("ble $t0, $t1, label"+to_string(labelCounter));
 	else if (logicOpt == ">=") asmBuffer.push_back("blt $t0, $t1, label"+to_string(labelCounter));
+}
+
+void ifElse(){
+	string tmp ="b label"+to_string(labelCounter+1);
+	asmBuffer.push_back(tmp);
+	asmBuffer.push_back(labels.top()+":");
+	labels.pop();
+	labelCounter++;
+	labels.push("label"+to_string(labelCounter));
 }
 
 void whileBegin(){

@@ -25,6 +25,7 @@ const int yyerror(char *msg,...);
 \>\=			{return GE;}
 \<\=			{return LE;}
 "if"			{return IF;}
+"else"			{return ELSE;}
 "while"			{return WHILE;}
 "int"			{return INT;}
 "double"		{return DOUBLE;}
