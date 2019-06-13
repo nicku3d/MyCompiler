@@ -19,6 +19,14 @@ struct element
 map<string, element> symbols_map; //rozwinąc tablice symboli o wartosc 
 //i wtedy usunac tablice stringow bo nie bedzie juz potrzebna ->> zrobione
 
+//do ifa
+stack<string> logicOptions;
+stack<string> labels;
+int labelCounter=0;
+void ifBegin();
+void ifEnd();
+void ifCondition(string logicOpt);
+
 void RPNtoFile(string);
 void czynnikToStack(string, int);
 void wyrToStack(string);
@@ -81,11 +89,13 @@ io_statment
 	;
 
 if_expr
-	:if_begin code_block 	{;}
+	:if_begin code_block 	{cout<<"etykieta koncowa"<<endl;
+							ifEnd();}//generowanie etykiety koncowej
 	;
 
 if_begin
-	:IF '(' condition ')' 	{;}
+	:IF '(' condition ')' 	{cout<<"poczatek"<<endl;
+							ifBegin();}//generowanie warunku i skoku
 	;
 
 code_block
@@ -93,16 +103,16 @@ code_block
 	;
 
 condition
-	: wyr logicOption wyr 	{;}
+	: wyr logicOption wyr 	{;}//begin if
 	;
 
 logicOption
-	: EQ			{;}
-	| NE			{;}
-	| LE			{;}
-	| '>'			{;}
-	| GE			{;}
-	| '<'			{;}
+	: EQ			{logicOptions.push("==");}
+	| NE			{logicOptions.push("!=");}
+	| LE			{logicOptions.push("<=");}
+	| '>'			{logicOptions.push(">");}
+	| GE			{logicOptions.push(">=");}
+	| '<'			{logicOptions.push("<");}
 	;
 	
 wyrp
@@ -320,7 +330,7 @@ string argToASM(string arg, int type, int tx, bool conversion)
 		tmp+="mtc1 $t"+to_string(tx)+", $f4";
 		//cvt . s . w $f1 , $f0
 		tmp+="\n";
-		tmp+="cvt.s.w $f4, $f"+to_string(tx);
+		tmp+="cvt.s.w $f"+to_string(tx)+", $f4";
 	}
 	else if(type==ID){
 	//TODO:sprawdzenie czy ID jest Int czy DOUBLE
@@ -515,6 +525,43 @@ void scand(string var)
 	asmBuffer.push_back("li $v0, 6");
 	asmBuffer.push_back("syscall");
 	asmBuffer.push_back(tmpstr);
+}
+
+
+void ifBegin(){
+	int arg1type,arg2type;
+	int arg1value, arg2value;
+	if(stk.top().type == ID){
+		if(getType(stk.top().val) == Int) asmBuffer.push_back("lw $t1, "+stk.top().val);
+	} else if(stk.top().type == LC) asmBuffer.push_back("li $t1, "+stk.top().val);
+	else yyerror("BŁĄD: if nie obsluguje typu Float\n");
+	stk.pop();
+
+	if(stk.top().type == ID){
+		if(getType(stk.top().val) == Int) asmBuffer.push_back("lw $t0, "+stk.top().val);
+	} else if(stk.top().type == LC) asmBuffer.push_back("li $t0, "+stk.top().val);
+	else yyerror("BŁĄD: if nie obsluguje typu Float\n");
+	stk.pop();
+
+	ifCondition(logicOptions.top());
+	logicOptions.pop();
+
+	labels.push("label"+to_string(labelCounter));
+	labelCounter++;
+}
+
+void ifEnd(){
+	asmBuffer.push_back(labels.top() + ":");
+	labels.pop();
+}
+
+void ifCondition(string logicOpt){
+	if(logicOpt == "==") asmBuffer.push_back("bne $t0, $t1, label"+to_string(labelCounter));
+	else if (logicOpt == "!=") asmBuffer.push_back("beq $t0, $t1, label"+to_string(labelCounter));
+	else if (logicOpt == "<") asmBuffer.push_back("bge $t0, $t1, label"+to_string(labelCounter));
+	else if (logicOpt == "<=") asmBuffer.push_back("bgt $t0, $t1, label"+to_string(labelCounter));
+	else if (logicOpt == ">") asmBuffer.push_back("ble $t0, $t1, label"+to_string(labelCounter));
+	else if (logicOpt == ">=") asmBuffer.push_back("blt $t0, $t1, label"+to_string(labelCounter));
 }
 /*załadowanie 1 arg
 ewentualna konwersja
