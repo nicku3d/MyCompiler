@@ -1,4 +1,7 @@
 # MyCompiler
 TODO:
-Make Float console input & output
-Make if
+Make if & else
+
+Make while/for
+
+Make arrays
