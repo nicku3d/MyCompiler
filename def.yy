@@ -119,7 +119,8 @@ wyrp
 	:ID '=' wyr		{printf("wyrazenie z = \n");
 				RPNtoFile($1);
 				RPNtoFile("=");
-				symbols_map[string($1)].type=Int;
+				if(getType(string($1)) == Double) symbols_map[string($1)].type=Double;
+				else symbols_map[string($1)].type=Int;
 				czynnikToStack(string($1), ID);
 				wyrToStack("=");};
 	;
@@ -228,7 +229,15 @@ void wyrToStack(string wyr)
 	{
 		//!!!JEDNAK NIE!!! Jednak statyczny typ
 		if(symbols_map[arg2].typeChanged == true) {
-			yyerror("Próba przypisania błędnego typu do zmiennej\n");
+			//arg2 to ID!
+			if(arg1type == ID){
+				if(symbols_map[arg1].type != symbols_map[arg2].type)
+					yyerror("Próba przypisania błędnego typu do zmiennej 1\n");
+			} else if(arg1type == LR && symbols_map[arg2].type != Double){
+					yyerror("Próba przypisania błędnego typu do zmiennej 2\n");
+			} else if(arg1type == LC && symbols_map[arg2].type != Int){
+					yyerror("Próba przypisania błędnego typu do zmiennej 3\n");
+			}
 		} else {
 			if(arg1type == ID)
 			{
@@ -237,15 +246,16 @@ void wyrToStack(string wyr)
 					//cout<<"Zmieniono typ "<< arg2 << " na double, poniewaz "<< arg1 << " jest double"<<endl;
 					symbols_map[arg2].val = "0";
 					cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+					symbols_map[arg2].typeChanged = true;
 				}
 			} else{
 				if(arg1type == LR){
 					symbols_map[arg2].type = Double;
 					symbols_map[arg2].val = "0";
 					cout << "Zamieniam typ zmiennej "<< arg2 <<" na double" << endl;
+					symbols_map[arg2].typeChanged = true;
 				}
 			}
-			symbols_map[arg2].typeChanged = true;
 		}
 		//comment
 		//lw $t0, resultx
