@@ -27,6 +27,10 @@ void ifBegin();
 void ifEnd();
 void ifCondition(string logicOpt);
 
+//while
+void whileBegin();
+void whileCondition();
+
 void RPNtoFile(string);
 void czynnikToStack(string, int);
 void wyrToStack(string);
@@ -70,6 +74,7 @@ linia
 					RPNtoFile("\n");}
 	|if_expr ';'		{;}
 	|io_statment ';'	{;}
+	|while_expr ';'		{;}
 	;
 
 io_statment
@@ -86,6 +91,16 @@ io_statment
 	|SCAND '(' ID ')'	{cout<<"SCAND"<<endl;
 						symbols_map[string($3)].type=Double;
 						scand($3);}
+	;
+
+while_expr
+	:while_begin code_block	{cout<<"While - warunek"<<endl;
+							whileCondition();}
+	;
+
+while_begin
+	:WHILE '(' condition ')' {cout<<"Poczatek while"<<endl;
+							whileBegin();}
 	;
 
 if_expr
@@ -260,9 +275,13 @@ void wyrToStack(string wyr)
 		//comment
 		//lw $t0, resultx
 		//sw $t0, zmienna
+		/*cout<<"Typ całkowity: "<<LC<<endl;
+		cout<<"Typ rzeczywisty: "<<LR<<endl;
+		cout<<"arg1type: "<<arg1type<<endl;
+		cout<<"arg2type: "<<arg2type<<endl;*/
 		asmBuffer.push_back(commentToASM(result));
 		asmBuffer.push_back(argToASM(arg1, arg1type, 0, false));
-		asmBuffer.push_back(resultToASM(arg2, arg1type));
+		asmBuffer.push_back(resultToASM(arg2, arg2type));
 
 	}
 	else
@@ -417,7 +436,10 @@ string wyrToASM(string wyr, int type)
 
 string resultToASM(string result, int type)
 {
-	if(type==LC) return "sw $t0, "+result;
+	if(type==ID){
+		if(getType(result) == Int) return "sw $t0, "+result;
+		else return "s.s $f0, "+result;
+	}else if(type==LC) return "sw $t0, "+result;
 	else return "s.s $f0, "+result;
 }
 
@@ -539,8 +561,6 @@ void scand(string var)
 
 
 void ifBegin(){
-	int arg1type,arg2type;
-	int arg1value, arg2value;
 	if(stk.top().type == ID){
 		if(getType(stk.top().val) == Int) asmBuffer.push_back("lw $t1, "+stk.top().val);
 	} else if(stk.top().type == LC) asmBuffer.push_back("li $t1, "+stk.top().val);
@@ -572,6 +592,36 @@ void ifCondition(string logicOpt){
 	else if (logicOpt == "<=") asmBuffer.push_back("bgt $t0, $t1, label"+to_string(labelCounter));
 	else if (logicOpt == ">") asmBuffer.push_back("ble $t0, $t1, label"+to_string(labelCounter));
 	else if (logicOpt == ">=") asmBuffer.push_back("blt $t0, $t1, label"+to_string(labelCounter));
+}
+
+void whileBegin(){
+	asmBuffer.push_back("label"+to_string(labelCounter)+":");
+	labelCounter++;
+
+	if(stk.top().type == ID){
+		if(getType(stk.top().val) == Int) asmBuffer.push_back("lw $t1, "+stk.top().val);
+	} else if(stk.top().type == LC) asmBuffer.push_back("li $t1, "+stk.top().val);
+	else yyerror("BŁĄD: if nie obsluguje typu Float\n");
+	stk.pop();
+
+	if(stk.top().type == ID){
+		if(getType(stk.top().val) == Int) asmBuffer.push_back("lw $t0, "+stk.top().val);
+	} else if(stk.top().type == LC) asmBuffer.push_back("li $t0, "+stk.top().val);
+	else yyerror("BŁĄD: if nie obsluguje typu Float\n");
+	stk.pop();
+
+	ifCondition(logicOptions.top());
+	logicOptions.pop();
+
+	labels.push("label"+to_string(labelCounter));
+	labelCounter++;
+
+}
+
+void whileCondition(){
+	asmBuffer.push_back("b label"+to_string(labelCounter-2));
+	asmBuffer.push_back(labels.top() + ":");
+	labels.pop();
 }
 /*załadowanie 1 arg
 ewentualna konwersja
